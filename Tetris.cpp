@@ -104,9 +104,8 @@ void Draw()
 	}
 }
 
-int main()
+void Tetris()
 {
-	consoleHandle = GetStdHandle( STD_OUTPUT_HANDLE );
 	// Prepare rand
 	srand(time(NULL));
 	
@@ -134,6 +133,69 @@ int main()
 		Update();
 		Draw();
 		Sleep(sleepDuration);
+	}
+}
+
+void PrintInstructions()
+{
+	ClearScreen(consoleHandle);
+
+	cout << "Tetriiiis" << endl;
+	cout << "---------------------------------" << endl;
+	cout << "Instruction" << endl;
+	cout << "---------------------------------" << endl;
+	cout << "Keys:" << endl;
+	cout << "a - left" << endl;
+	cout << "d - right" << endl;
+	cout << "Esc - back to menu" << endl;
+	cout << "---------------------------------" << endl;
+	cout << "Press any key to return to menu" << endl;
+
+	while(!kbhit()) {
+		Sleep(sleepDuration);
+	}
+}
+
+int main() {
+	consoleHandle = GetStdHandle( STD_OUTPUT_HANDLE );
+
+	while(true) 
+	{
+		ClearScreen(consoleHandle);
+
+		cout << "Tetriiiis" << endl;
+		cout << "---------------------------------" << endl;
+		cout << "Menu" << endl;
+		cout << "---------------------------------" << endl;
+		cout << "1 - Start the game" << endl;
+		cout << "2 - See instructions about the game" << endl;
+		cout << "3 - Show the highest score the player has achieved in this session" << endl;
+		cout << "4 - Exit the game" << endl;
+
+		bool isMenuActive = true;
+		while(isMenuActive)
+		{
+			if (kbhit())
+			{
+				char key = getch();
+				switch (key)
+				{
+					case '1':
+						Tetris();
+						isMenuActive = false;
+						break;
+					case '2':
+						PrintInstructions();
+						isMenuActive = false;
+						break;
+					case '3':
+						break;
+					case '4':
+						return 0;
+				}
+			}	
+			Sleep(sleepDuration);
+		}
 	}
 
 	return 0;
