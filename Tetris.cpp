@@ -3,6 +3,7 @@
 #include <iostream>
 #include <conio.h>
 #include <time.h>
+#include <fstream>
 
 #include "ConsoleGaming.h"
 
@@ -156,6 +157,31 @@ void PrintInstructions()
 	}
 }
 
+void PrintHighestScore()
+{
+	int highestScore;
+	
+	ifstream ifs("score.txt");
+	ifs >> highestScore;
+	ifs.close();
+
+	ClearScreen(consoleHandle);
+
+	cout << "Tetriiiis" << endl;
+	cout << "---------------------------------" << endl;
+	
+	cout << "Highest Score: " << endl;
+	cout << highestScore << endl;
+	cout << "---------------------------------" << endl;
+	cout << "Press any key to return to menu" << endl;
+
+	while(!kbhit()) {
+		Sleep(sleepDuration);
+	}
+
+}
+
+
 int main() {
 	consoleHandle = GetStdHandle( STD_OUTPUT_HANDLE );
 
@@ -189,6 +215,8 @@ int main() {
 						isMenuActive = false;
 						break;
 					case '3':
+						PrintHighestScore();
+						isMenuActive = false;
 						break;
 					case '4':
 						return 0;

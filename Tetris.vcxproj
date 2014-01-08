@@ -82,6 +82,9 @@
   <ItemGroup>
     <ClInclude Include="ConsoleGaming.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="score.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
