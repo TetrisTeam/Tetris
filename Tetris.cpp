@@ -15,7 +15,7 @@ typedef vector<GameObject>::iterator randomAccess_iterator;
 typedef vector<GameObject>::const_iterator const_iterator;
 
 // Window constants
-const int WindowWidth = 70;
+const int WindowWidth = 8;
 const int WindowHeight = 30;
 // Shape
 const int ShapeSpeed = 1;
@@ -25,6 +25,8 @@ unsigned long sleepDuration = 200;
 // No need to reference the active shape, since it will always be the last shape in the list
 vector<vector<GameObject>> shapes;
 
+// Row status
+int rowCounters[WindowHeight];
 
 void Update()
 {
@@ -70,7 +72,6 @@ void Update()
 		}
 	}
 
-	// Generate a new shape
 	if (hasReachedFloor)
 	{
 		// Return the coordinates to how they were
@@ -80,6 +81,51 @@ void Update()
 			shapeNode->Coordinates.Y -= ShapeSpeed;
 		}
 		
+		// Update row counters
+		for (randomAccess_iterator shapeNode = activeShape->begin(); shapeNode != activeShape->end(); ++shapeNode)
+		{
+			++rowCounters[shapeNode->Coordinates.Y];
+		}
+		
+		// Check for full rows from bottom to top
+		for (int i = WindowHeight - 1; i >= 0; --i)
+		{
+			if (rowCounters[i] == WindowWidth)
+			{
+				// Delete all parts of shapes in the current row
+				// Move higher parts with one position down
+				// (The shapes[0] is the floor, so we must skip it
+				for (int shapeIndex = 1; shapeIndex < shapes.size(); ++shapeIndex) 
+				{
+					for (int shapePartIndex = shapes[shapeIndex].size() - 1; shapePartIndex >= 0; --shapePartIndex)
+					{
+						if (shapes[shapeIndex][shapePartIndex].Coordinates.Y == i)
+						{
+							// Replace it with the last one
+							shapes[shapeIndex][shapePartIndex] = shapes[shapeIndex].back();
+							// Remove the last one
+							shapes[shapeIndex].pop_back();
+						}
+						else if (shapes[shapeIndex][shapePartIndex].Coordinates.Y < i)
+						{
+							++shapes[shapeIndex][shapePartIndex].Coordinates.Y;
+						}
+					}
+				}
+				
+				// Move row counters
+				for (int j = i; j > 0; --j)
+				{
+					rowCounters[j] = rowCounters[j - 1];
+				}
+				rowCounters[0] = 0;
+				
+				// Force second check for the same row
+				++i;
+			}
+		}
+		
+		// Generate a new shape
 		vector<GameObject> shape;
 		int x = rand() % WindowWidth;
 		shape.push_back(GameObject(x, 0, ShapeSymbol));
@@ -112,12 +158,17 @@ void Tetris()
 	
 	// Create the floor
 	vector<GameObject> floor;
-	for (int i = 0; i < WindowWidth - 1; i++)
+	for (int i = 0; i < WindowWidth; i++)
 	{
 		floor.push_back(GameObject(i, WindowHeight - 1, ShapeSymbol));
 	}
 	shapes.push_back(floor);
-
+	
+	// Init row counters
+	for (int i = 0; i < WindowHeight; ++i)
+	{
+		rowCounters[i] = 0;
+	}
 
 	// Create the first active shape
 	vector<GameObject> shape;
