@@ -37,12 +37,9 @@ public:
 		this->Coordinates.Y = value.Y;
 	}
 
-	void GameObject::Draw(HANDLE consoleOutputHandle) const
+	void GameObject::Draw(HANDLE consoleOutputHandle, char **screenMatrix) const
 	{
-		SetConsoleCursorPosition(consoleOutputHandle, this->Coordinates);
-		ConsoleColor color = (this->Color & 0x0F) | BackgroundColor;
-		SetConsoleTextAttribute(consoleOutputHandle, color);
-		std::cout << this->Symbol;
+		screenMatrix[Coordinates.Y][Coordinates.X] = this->Symbol;
 	}
 	
 	static void SetBackgroundColor(ConsoleColor backgroundColor)
