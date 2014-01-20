@@ -1,6 +1,8 @@
 Tetris
 ======
 
+__@NikolaDimitroff: We made the project at home so almost all of the code was uploaded from my GitHub account.__
+
 Course assignment for Introduction to Programming class @ FMI, SU.
 
 General
