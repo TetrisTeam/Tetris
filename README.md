@@ -21,4 +21,6 @@ In `Tetris` we have 2 matrices - `ScreenMatrix` and `PrevScreenMatrix`. In `Scre
 
 Each block (L-Block, Z-Block, etc.) consists of several cells. They are defined in their corresponding class definitions via a 3x3 matrix with 1 indicating a cell of the block and 0 indicating empty space. We chose it to be 3x3 to make it easier to realize collision detection (in `BlockBase`).
 
+Collision detection is rather basic, it checks each of the block's cells to determine whether there is something beneath it (which is NOT a cell of the same block). If yes - several checks are made, including whether the blocks are stacked way too high (in which case a GAME OVER! message is shown) and whether they form a full row (in which case the row turns gray and 40 points are given to the player).
+
 The background music, defined in `BackgroundMusic`, starts a new thread with the start of the console app and runs for the whole lifecycle of the application. It is essentially an infinite loop, calling Beep with different arguments to simulate the original TETRIS theme.
