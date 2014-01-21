@@ -4,15 +4,25 @@
 #include "BlockBase.h"
 #include "Environment.h"
 
-static const bool SquareMatrix[3][3] = {{1, 1, 0}, 
-							      {1, 1, 0}, 
-							      {0, 0, 0}};
+bool SquareMatrix[2][2] = {{1, 1}, 
+					       {1, 1}};
 
 class SquareBlock : public BlockBase
 {	
 public:
     SquareBlock(int X, int Y, int Rotation, bool flipped, ConsoleColor Color, char Symbol, Environment* Env) : BlockBase(X, Y, Rotation, flipped, Color, Symbol, Env) {
-		memcpy(shape, SquareMatrix, sizeof (bool) * 3 * 3);
+		Width = sizeof(SquareMatrix[0])/sizeof(bool);
+		Height = sizeof(SquareMatrix)/sizeof(SquareMatrix[0]);
+
+		shape = new bool *[Height];
+		for(int i=0; i<Height; i++)
+		{
+			shape[i] = new bool[Width];
+			for(int j=0; j<Width; j++)
+			{
+				shape[i][j] = SquareMatrix[i][j];
+			}
+		}
 		init();
 	}
 };
