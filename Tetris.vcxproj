@@ -76,11 +76,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BackgroundMusic.cpp" />
     <ClCompile Include="ConsoleGaming.cpp" />
     <ClCompile Include="Tetris.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BackgroundMusic.h" />
+    <ClInclude Include="BlockBase.h" />
     <ClInclude Include="ConsoleGaming.h" />
+    <ClInclude Include="Environment.h" />
+    <ClInclude Include="LBlock.h" />
+    <ClInclude Include="LineBlock.h" />
+    <ClInclude Include="SquareBlock.h" />
+    <ClInclude Include="TBlock.h" />
+    <ClInclude Include="ZBlock.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="score.txt" />
