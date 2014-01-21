@@ -68,7 +68,7 @@ public:
 		from screen (used only by the ghost block) */
 	BlockBase::~BlockBase()
 	{
-		ClearLastDraw();
+		ClearLastDraw(false);
 
 		for(int i=0; i<Height; i++)
 			delete[] shape[i];
@@ -191,7 +191,7 @@ public:
 	}
 
 	/*	Removes figure from screen */
-	void BlockBase::ClearLastDraw() 
+	void BlockBase::ClearLastDraw(bool clearMatrix) 
 	{
 		for(int i=0; i<Height; i++)
 		{
@@ -202,6 +202,8 @@ public:
 					COORD coord = {LastDrawingX+j, LastDrawingY+i};
 					SetConsoleCursorPosition(Env->ConsoleHandle, coord);
 					std::cout << ' ';
+					if(clearMatrix)
+						Env->ScreenMatrix[coord.Y][coord.X] = 0;
 				}
 			}
 		}
@@ -216,7 +218,7 @@ public:
 			if(LastDrawingX == Coordinates.X && LastDrawingY == Coordinates.Y)
 				return;
 
-			ClearLastDraw();
+			ClearLastDraw(true);
 		}
 
 		for(int i=0; i<Height; i++)
@@ -226,8 +228,11 @@ public:
 				if(shape[i][j])
 				{
 					COORD coord = {Coordinates.X+j, Coordinates.Y+i};
+					int color = (!Ghost ? Color : 8);
+					if(!Ghost)
+						screenMatrix[coord.Y][coord.X] = color;
 					SetConsoleCursorPosition(consoleOutputHandle, coord);
-					SetConsoleTextAttribute(consoleOutputHandle, (!Ghost ? Color : 8));
+					SetConsoleTextAttribute(consoleOutputHandle, color);
 					std::cout << (!Ghost ? Symbol : '#');
 				}
 			}
