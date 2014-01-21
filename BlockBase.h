@@ -11,11 +11,14 @@ class BlockBase
 private:
 	typedef unsigned char GameColor;
 	static const GameColor DefaultColor = 0xF;
-	static GameColor BackgroundColor;
-protected:
-	bool shape[3][3];
+	static GameColor BackgroundColor;	
 public: 
+	bool **shape;
+	int Width;
+	int Height;
 	COORD Coordinates;
+	int LastDrawingX;
+	int LastDrawingY;
 	int Rotation;
 	char Symbol;
 	ConsoleColor Color;
@@ -28,6 +31,8 @@ public:
 	{
 		COORD coordinates = { x, y };
 		this->Coordinates = coordinates;
+		LastDrawingX = -1;
+		LastDrawingY = -1;
 		this->Env = Env;
 		Ghost = false;
 		this->Flipped = flipped;
@@ -35,36 +40,66 @@ public:
 
 	BlockBase::BlockBase(BlockBase* Block)
 	{
-		//memcpy(shape, Block->shape, sizeof (bool) * 3 * 3);
-		for(int i=0; i<3; i++) 
+		Width = Block->Width;
+		Height = Block->Height;
+
+		shape = new bool *[Height];
+		for(int i=0; i<Height; i++)
 		{
-			for(int j=0; j<3; j++)
+			shape[i] = new bool[Width];
+			for(int j=0; j<Width; j++)
 			{
 				shape[i][j] = Block->shape[i][j];
 			}
 		}
+
 		Coordinates.X = Block->Coordinates.X;
 		Coordinates.Y = Block->Coordinates.Y;
+		LastDrawingX = Block->LastDrawingX;
+		LastDrawingY = Block->LastDrawingY;
 		Rotation = Block->Rotation;
 		Symbol = Block->Symbol;
 		Color = Block->Color;
 		Env = Block->Env;
-		Ghost = false;
+		Ghost = false;		
+	}
+
+	BlockBase::~BlockBase()
+	{
+		ClearLastDraw();
+
+		for(int i=0; i<Height; i++)
+			delete[] shape[i];
+		delete shape;
+
+		shape = NULL;
+		Env = NULL;
 	}
 
 	void BlockBase::init() 
 	{
 		if(Flipped)
 		{
-			char temp[3][3];
-			memcpy(temp, shape, sizeof (bool) * 3 * 3);
-			for(int i=0; i<3; i++)
+			bool **temp = new bool *[Height];
+			for(int i=0; i<Height; i++)
 			{
-				for(int j=0; j<3; j++)
+				temp[i] = new bool[Width];
+				for(int j=0; j<Width; j++)
 				{
-					shape[i][j] = temp[i][2-j];
+					temp[i][j] = shape[i][j];
 				}
 			}
+
+			for(int i=0; i<Height; i++)
+			{
+				for(int j=0; j<Width; j++)
+				{
+					shape[i][j] = temp[i][Width-j-1];
+				}
+				delete[] temp[i];
+			}
+			
+			delete[] temp;
 		}
 
 		int t = Rotation;
@@ -74,6 +109,9 @@ public:
 
 	void BlockBase::RotateBy(int angle) 
 	{
+		if(angle == 0)
+			return;
+
 		Rotation += angle;
 		
 		while(Rotation >= 360)
@@ -82,39 +120,41 @@ public:
 		while(Rotation < 0)
 			Rotation += 360;
 
-		char temp[3][3];
-
-		switch(angle) 
+		bool **temp = new bool *[Height];
+		for(int i=0; i<Height; i++)
 		{
-		case 0:
-			break;
-		//rotate clockwise
-		case 90:
-			memcpy(temp, shape, sizeof (bool) * 3 * 3);
-
-			for(int i=0; i<3; i++)
-				for(int j=0; j<3; j++)
-					shape[j][2-i] = temp[i][j];
-			break;
-
-		case 180:
-			memcpy(temp, shape, sizeof (bool) * 3 * 3);
-
-			for(int i=0; i<3; i++)
-				for(int j=0; j<3; j++)
-					shape[2-i][2-j] = temp[i][j];
-			break;
-
-		case 270:
+			temp[i] = new bool[Width];
 			
-			memcpy(temp, shape, sizeof (bool) * 3 * 3);
-
-			for(int i=0; i<3; i++)
-				for(int j=0; j<3; j++)
-					shape[2-j][i] = temp[i][j];
-			break;
-		
+			for(int j=0; j<Width; j++)
+			{
+				temp[i][j] = shape[i][j];
+			}
+			delete[] shape[i];
 		}
+		delete[] shape;
+
+		for(int i=0; i<angle/90; i++)
+		{
+			int t = Width;
+			Width = Height;
+			Height = t;
+
+			shape = new bool *[Height];
+			for(int i=0; i<Height; i++)
+			{
+				shape[i] = new bool[Width];
+				for(int j=0; j<Width; j++)
+				{
+					shape[i][j] = temp[Width-j-1][i];
+				}
+			}
+		}
+
+		for(int i=0; i<Width; i++)
+		{
+			delete[] temp[i];
+		}
+		delete[] temp;
 	}
 
 	void BlockBase::UpdateCoordinates(const COORD& value)
@@ -123,75 +163,26 @@ public:
 		this->Coordinates.Y = value.Y;
 	}
 
-	bool BlockBase::CanGoSideways(int by) 
+	bool BlockBase::IsInside(int GlobalX, int GlobalY)
 	{
-		int leftMost = 2;
+		int LocalX = GlobalX-Coordinates.X;
+		int LocalY = GlobalY-Coordinates.Y;
 
-		for(int i=0; i<3; i++)
-		{
-			for(int j=0; j<3; j++)
-			{
-				if(shape[i][j]) {
-					if(j < leftMost)
-						leftMost = j;
-					break;
-				}
-			}
-		}
-
-		if(leftMost + Coordinates.X + by < 0)
-			return false;
-
-		int rightMost = 0;
-
-		for(int i=0; i<3; i++)
-		{
-			for(int j=2; j>=0; j--)
-			{
-				if(shape[i][j]) {
-					if(rightMost < j)
-						rightMost = j;
-					break;
-				}
-			}
-		}
-
-		if(rightMost + Coordinates.X + by >= Env->WindowWidth)
-			return false;
-
-		for(int i=0; i<3; i++)
-		{
-			for(int j=0; j<3; j++)
-			{
-				if(shape[i][j]) 
-				{
-					// right side
-					if((j == 2 || !shape[i][j+1]) && Coordinates.X+j+1 < Env->WindowWidth && Env->ScreenMatrix[Coordinates.Y+i][Coordinates.X+j+1] == '*')
-					{
-						return false;
-					}
-
-					// left side
-					if((j == 0 || !shape[i][j-1]) && Coordinates.X+j-1 >= 0 && Env->ScreenMatrix[Coordinates.Y+i][Coordinates.X+j-1] == '*')
-					{ 
-						return false;
-					}
-				}
-			}
-		}
-
-		return true;
+		return (LocalX >= 0 && LocalX < Width && LocalY >= 0 && LocalY < Height && shape[LocalY][LocalX]);
 	}
 
-	bool BlockBase::CollidesWith(BlockBase* Block)
+	bool BlockBase::CollidesEnvironment()
 	{
-		for(int i=0; i<3; i++)
+		for(int i=0; i<Height; i++)
 		{
-			for(int j=0; j<3; j++) 
+			for(int j=0; j<Width; j++) 
 			{
-				if(Block->shape[i][j])
+				if(shape[i][j])
 				{
-					if(CollidesPoint(Block->Coordinates.X+j, Block->Coordinates.Y+i))
+					
+					int GlobalX = Coordinates.X+j;
+					int GlobalY = Coordinates.Y+i;
+					if(Env->CollisionMatrix[GlobalY][GlobalX])
 						return true;
 				}
 			}
@@ -200,55 +191,48 @@ public:
 		return false;
 	}
 
-	bool BlockBase::CollidesFloor() 
+	void BlockBase::ClearLastDraw() 
 	{
-		for(int i=0; i<3; i++)
+		for(int i=0; i<Height; i++)
 		{
-			bool b = CollidesPoint(Coordinates.X+i, Env->WindowHeight-1);
-			if(b)
-				return true;
-		}
-
-		return false;
-	}
-
-	bool BlockBase::CollidesPoint(int X, int Y) 
-	{
-		for(int i=0; i<3; i++)
-		{
-			for(int j=0; j<3; j++)
-			{
-				if(shape[i][j] &&  Coordinates.Y+i+1 == Y && Coordinates.X+j == X)
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	void BlockBase::Move(int DirX, int DirY) 
-	{
-		Coordinates.X += DirX;
-		Coordinates.Y += DirY;
-	}
-
-	void BlockBase::Draw(HANDLE consoleOutputHandle, char **screenMatrix) const
-	{
-		for(int i=0; i<3; i++)
-		{
-			for(int j=0; j<3; j++)
+			for(int j=0; j<Width; j++)
 			{
 				if(shape[i][j])
 				{
-					if(!Ghost)
-						screenMatrix[Coordinates.Y+i][Coordinates.X+j] = Color;
-					else
-						screenMatrix[Coordinates.Y+i][Coordinates.X+j] = -1;
+					COORD coord = {LastDrawingX+j, LastDrawingY+i};
+					SetConsoleCursorPosition(Env->ConsoleHandle, coord);
+					std::cout << ' ';
 				}
 			}
 		}
+	}
+
+	void BlockBase::Draw(HANDLE consoleOutputHandle, char **screenMatrix)
+	{
+		if(LastDrawingX != -1)
+		{
+			if(LastDrawingX == Coordinates.X && LastDrawingY == Coordinates.Y)
+				return;
+
+			ClearLastDraw();
+		}
+
+		for(int i=0; i<Height; i++)
+		{
+			for(int j=0; j<Width; j++)
+			{
+				if(shape[i][j])
+				{
+					COORD coord = {Coordinates.X+j, Coordinates.Y+i};
+					SetConsoleCursorPosition(consoleOutputHandle, coord);
+					SetConsoleTextAttribute(consoleOutputHandle, (!Ghost ? Color : 8));
+					std::cout << (!Ghost ? Symbol : '#');
+				}
+			}
+		}
+
+		LastDrawingX = Coordinates.X;
+		LastDrawingY = Coordinates.Y;
 	}
 	
 	static void SetBackgroundColor(GameColor backgroundColor)

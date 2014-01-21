@@ -17,30 +17,24 @@
 
 using namespace std;
 
-HANDLE consoleHandle;
+HANDLE ConsoleHandle;
 
 // Window constants
-<<<<<<< HEAD
-const int WindowWidth = 75;
+const int WindowWidth = 8;
 const int WindowHeight = 25;
 char **ScreenMatrix;
+bool **CollisionMatrix;
 char **PrevScreenMatrix;
 
-=======
-const int WindowWidth = 8;
-const int WindowHeight = 30;
->>>>>>> 31692bfe7e47199954c31a38c37b3b413711f6ba
 // Shape
 int ShapeSpeed = 1;
 const char ShapeSymbol = '*';
 // Game variables
-unsigned long sleepDuration = 200;
-// No need to reference the active shape, since it will always be the last shape in the list
-vector<vector<GameObject>> shapes;
-vector<BlockBase*> blocks;
-BlockBase* ghostBlock;
+unsigned long SleepDuration = 200;
+BlockBase* CurrentBlock;
+BlockBase* GhostBlock;
 
-BackgroundMusic backgroundMusic;
+BackgroundMusic BgMusic;
 Environment *Env;
 int Level = 1;
 int CurrentScore = 0;
@@ -49,46 +43,31 @@ int Rows = 0;
 
 CONSOLE_SCREEN_BUFFER_INFO csbi;
 
-
-void RecalcGhost(BlockBase* activeBlock)
+void RecalcGhost(BlockBase* CurrentBlock)
 {
-	ghostBlock->Coordinates.X = activeBlock->Coordinates.X;
-	ghostBlock->Coordinates.Y = activeBlock->Coordinates.Y;
+	GhostBlock->Coordinates.X = CurrentBlock->Coordinates.X;
+	GhostBlock->Coordinates.Y = CurrentBlock->Coordinates.Y;
 
 	while(true)
 	{
-		bool colliding = false;
+		GhostBlock->Coordinates.Y += 1;
 
-		for(std::vector<BlockBase*>::iterator it = blocks.begin(); it != blocks.end(); ++it) 
+		if(GhostBlock->CollidesEnvironment())
 		{
-			if((*it) == activeBlock)
-				continue;
-
-			if(ghostBlock->CollidesWith(*it))
-			{
-				colliding = true;
-				break;
-			}
-		}
-
-		if(!ghostBlock->CollidesFloor() && !colliding) 
-		{
-			ghostBlock->Coordinates.Y += 1;
-		}
-		else
-		{			
+			GhostBlock->Coordinates.Y -= 1;
 			break;
 		}
 	};
 }
 
 void AddBlock() {
-	int x = rand() % (WindowWidth-3);
+	int x = rand() % (WindowWidth-4);
 	int color = rand() % 7 + 9;
 	int rotation = rand() % 4;
 	int type = rand() % 5;
 
 	BlockBase* t;
+	type = 4;
 
 	switch(type)
 	{
@@ -109,16 +88,12 @@ void AddBlock() {
 		break;
 	}
 
-<<<<<<< HEAD
-	blocks.push_back(t);
-	ghostBlock = new BlockBase(t);
-	ghostBlock->Ghost = true;
+	//Blocks.push_back(t);
+	CurrentBlock = t;
+	GhostBlock = new BlockBase(t);
+	GhostBlock->Ghost = true;
 	RecalcGhost(t);
 }
-=======
-// Row status
-int rowCounters[WindowHeight];
->>>>>>> 31692bfe7e47199954c31a38c37b3b413711f6ba
 
 void CheckForCombo() 
 {
@@ -155,12 +130,12 @@ bool CheckIfFull()
 		if(ScreenMatrix[2][i] >= 9 && ScreenMatrix[2][i] <= 15)
 		{
 			char str[] = "GAME OVER!";
-			ClearScreen(consoleHandle);
+			ClearScreen(ConsoleHandle);
 			int stX = WindowWidth/2-sizeof(str)/(sizeof(char)*2);
 			int stY = WindowHeight/2;
 
 			COORD coord = {stX, stY};
-			SetConsoleCursorPosition(consoleHandle, coord);
+			SetConsoleCursorPosition(ConsoleHandle, coord);
 			std::cout << str;
 
 			Sleep(5000);
@@ -174,7 +149,6 @@ bool CheckIfFull()
 bool Update()
 {
 	COORD direction = { 0, 0 };
-	BlockBase* activeBlock = blocks[blocks.size()-1];
 	ShapeSpeed = 1;
 
 	if (kbhit())
@@ -189,121 +163,68 @@ bool Update()
 			direction.X = 1;
 			break;
 		case 's':
-			activeBlock->RotateBy(90);
-			if(ghostBlock != NULL) {
-				ghostBlock->RotateBy(90);
-				RecalcGhost(activeBlock);
+			CurrentBlock->RotateBy(90);
+			if(GhostBlock != NULL) {
+				GhostBlock->RotateBy(90);
+				RecalcGhost(CurrentBlock);
 			}
 			break;
 		case ' ':
 			ShapeSpeed = 2;
 			break;
 		case 27:
-			SetConsoleTextAttribute(consoleHandle, 15);
+			SetConsoleTextAttribute(ConsoleHandle, 15);
 			return true;
 		};
 	}	
 	
 	for(int i=0; i<ShapeSpeed; i++)
 	{
-		bool colliding = false;
-
-		for(std::vector<BlockBase*>::iterator it = blocks.begin(); it != blocks.end(); ++it) 
+		CurrentBlock->Coordinates.Y += 1;
+		if(!CurrentBlock->CollidesEnvironment())
 		{
-			if((*it) == activeBlock)
-				continue;
-
-			if(activeBlock->CollidesWith(*it))
+			if(direction.X != 0)
 			{
-				colliding = true;
-				break;
-			}
-		}
-
-<<<<<<< HEAD
-		if(!activeBlock->CollidesFloor() && !colliding) 
-=======
-	if (hasReachedFloor)
-	{
-		// Return the coordinates to how they were
-		for (randomAccess_iterator shapeNode = activeShape->begin(); shapeNode != activeShape->end(); ++shapeNode)
->>>>>>> 31692bfe7e47199954c31a38c37b3b413711f6ba
-		{
-			activeBlock->Coordinates.Y += 1;
-			if(direction.X != 0 && activeBlock->CanGoSideways(direction.X)) {
-				activeBlock->Coordinates.X += direction.X;
-				if(ghostBlock != NULL)
-					RecalcGhost(activeBlock);
+				CurrentBlock->Coordinates.X += direction.X;
+				if(CurrentBlock->CollidesEnvironment())
+				{
+					CurrentBlock->Coordinates.X -= direction.X;
+				}
+				else if(GhostBlock != NULL)
+				{
+					RecalcGhost(CurrentBlock);
+				}
 			}
 
-			if(ghostBlock != NULL && ghostBlock->Coordinates.Y - activeBlock->Coordinates.Y < 6)
-				ghostBlock = NULL;
+			if(GhostBlock != NULL && GhostBlock->Coordinates.Y - CurrentBlock->Coordinates.Y < 6) {
+				delete GhostBlock;
+				GhostBlock = NULL;
+			}
 		}
-		else
+		else 
 		{
+			CurrentBlock->Coordinates.Y -= 1;
+
+			int GlobalX = CurrentBlock->Coordinates.X;
+			int GlobalY = CurrentBlock->Coordinates.Y;
+
+			for(int i=0; i<CurrentBlock->Height; i++)
+			{
+				for(int j=0; j<CurrentBlock->Width; j++)
+				{
+					 if(CurrentBlock->shape[i][j])
+					 {
+						 CollisionMatrix[GlobalY+i][GlobalX+j] = 1;
+					 }
+				}
+			}
+
 			if(CheckIfFull())
 				return true;
 			CheckForCombo();
 			AddBlock();
 			break;
 		}
-<<<<<<< HEAD
-=======
-		
-		// Update row counters
-		for (randomAccess_iterator shapeNode = activeShape->begin(); shapeNode != activeShape->end(); ++shapeNode)
-		{
-			++rowCounters[shapeNode->Coordinates.Y];
-		}
-		
-		// Check for full rows from bottom to top
-		for (int i = WindowHeight - 1; i >= 0; --i)
-		{
-			if (rowCounters[i] == WindowWidth)
-			{
-				// Delete all parts of shapes in the current row
-				// Move higher parts with one position down
-				// (The shapes[0] is the floor, so we must skip it
-				for (int shapeIndex = 1; shapeIndex < shapes.size(); ++shapeIndex) 
-				{
-					for (int shapePartIndex = shapes[shapeIndex].size() - 1; shapePartIndex >= 0; --shapePartIndex)
-					{
-						if (shapes[shapeIndex][shapePartIndex].Coordinates.Y == i)
-						{
-							// Replace it with the last one
-							shapes[shapeIndex][shapePartIndex] = shapes[shapeIndex].back();
-							// Remove the last one
-							shapes[shapeIndex].pop_back();
-						}
-						else if (shapes[shapeIndex][shapePartIndex].Coordinates.Y < i)
-						{
-							++shapes[shapeIndex][shapePartIndex].Coordinates.Y;
-						}
-					}
-				}
-				
-				// Move row counters
-				for (int j = i; j > 0; --j)
-				{
-					rowCounters[j] = rowCounters[j - 1];
-				}
-				rowCounters[0] = 0;
-				
-				// Force second check for the same row
-				++i;
-			}
-		}
-		
-		// Generate a new shape
-		vector<GameObject> shape;
-		int x = rand() % WindowWidth;
-		shape.push_back(GameObject(x, 0, ShapeSymbol));
-		shape.push_back(GameObject(x, 1, ShapeSymbol));
-		shape.push_back(GameObject(x + 1, 0, ShapeSymbol));
-		shape.push_back(GameObject(x + 1, 1, ShapeSymbol));
-		// Add it to the list, set it as active
-		shapes.push_back(shape);
->>>>>>> 31692bfe7e47199954c31a38c37b3b413711f6ba
 	}
 
 	return false;
@@ -322,90 +243,57 @@ void Draw()
 		}
 	}
 
-	for(std::vector<BlockBase*>::iterator it = blocks.begin(); it != blocks.end(); ++it) 
+	/*for(std::vector<BlockBase*>::iterator it = Blocks.begin(); it != Blocks.end(); ++it) 
 	{
-		(*it)->Draw(consoleHandle, ScreenMatrix);
-	}
+		(*it)->Draw(ConsoleHandle, ScreenMatrix);
+	}*/
 
-	if(ghostBlock != NULL)
-		ghostBlock->Draw(consoleHandle, ScreenMatrix);
+	CurrentBlock->Draw(ConsoleHandle, ScreenMatrix);
 
-	for(int i=0; i<WindowHeight-1; i++) 
-	{
-		for(int j=0; j<WindowWidth; j++) 
-		{
-			if(ScreenMatrix[i][j] != PrevScreenMatrix[i][j]) 
-			{
-				COORD coord = {j, i};
-				SetConsoleCursorPosition(consoleHandle, coord);				
-				// its -1 if this is the ghost block
-				if(ScreenMatrix[i][j] != -1) {
-					ConsoleColor color = ScreenMatrix[i][j];
-					SetConsoleTextAttribute(consoleHandle, color);
-					std::cout << (ScreenMatrix[i][j] > 0 ? ShapeSymbol : ' ');
-				}
-				else {
-					SetConsoleTextAttribute(consoleHandle, 8);
-					std::cout << '#';
-				}
-			}
-		}
-	}
+	if(GhostBlock != NULL)
+		GhostBlock->Draw(ConsoleHandle, ScreenMatrix);
 
 	COORD coord = {1, 1};
-	SetConsoleCursorPosition(consoleHandle, coord);
-	SetConsoleTextAttribute(consoleHandle, 15);
+	SetConsoleCursorPosition(ConsoleHandle, coord);
+	SetConsoleTextAttribute(ConsoleHandle, 15);
 	std::cout << "Level: " << Level << " Score: "<<CurrentScore;
 
 	COORD coord2 = {WindowWidth, WindowHeight-1};
-	SetConsoleCursorPosition(consoleHandle, coord2);
+	SetConsoleCursorPosition(ConsoleHandle, coord2);
 }
 
 void Tetris()
 {
-	ClearScreen(consoleHandle);
+	ClearScreen(ConsoleHandle);
 	// Prepare rand
 	srand(time(NULL));
-<<<<<<< HEAD
 
-	Env = new Environment(ScreenMatrix, WindowWidth, WindowHeight);
+	Env = new Environment(ScreenMatrix, CollisionMatrix, ConsoleHandle, WindowWidth, WindowHeight);
 		
 	for(int i=0; i<WindowHeight; i++) 
-=======
-	
-	// Create the floor
-	vector<GameObject> floor;
-	for (int i = 0; i < WindowWidth; i++)
->>>>>>> 31692bfe7e47199954c31a38c37b3b413711f6ba
 	{
 		for(int j=0; j<WindowWidth; j++) 
 		{
 			PrevScreenMatrix[i][j] = 0;
 			ScreenMatrix[i][j] = 0;
+			CollisionMatrix[i][j] = 0;
 		}
 	}
-<<<<<<< HEAD
 
 	// Create the floor
 	for(int i=0; i<WindowWidth; i++) 
 	{
 		ScreenMatrix[WindowHeight - 1][i] = ShapeSymbol;
 		COORD coord = {i, WindowHeight - 1};
-		SetConsoleCursorPosition(consoleHandle, coord);
+		SetConsoleCursorPosition(ConsoleHandle, coord);
 		ConsoleColor color = 8;
-		SetConsoleTextAttribute(consoleHandle, color);
+		SetConsoleTextAttribute(ConsoleHandle, color);
 		std::cout << ScreenMatrix[WindowHeight - 1][i];
-		SetConsoleTextAttribute(consoleHandle, 7);
-=======
-	shapes.push_back(floor);
-	
-	// Init row counters
-	for (int i = 0; i < WindowHeight; ++i)
-	{
-		rowCounters[i] = 0;
->>>>>>> 31692bfe7e47199954c31a38c37b3b413711f6ba
-	}
+		SetConsoleTextAttribute(ConsoleHandle, 7);
 
+		CollisionMatrix[WindowHeight - 1][i] = 1;
+	}
+	
 	// Create the first active shape
 	AddBlock();
 
@@ -414,17 +302,13 @@ void Tetris()
 		if(Update())
 			return;
 		Draw();
-		Sleep(sleepDuration);
+		Sleep(SleepDuration);
 	}
-}
-
-GameObject* GetShapeFromCoords(int x, int y) {
-	return NULL;
 }
 
 void PrintInstructions()
 {
-	ClearScreen(consoleHandle);
+	ClearScreen(ConsoleHandle);
 
 	cout << "Tetriiiis" << endl;
 	cout << "---------------------------------" << endl;
@@ -440,7 +324,7 @@ void PrintInstructions()
 	cout << "Press any key to return to menu" << endl;
 
 	while(!kbhit()) {
-		Sleep(sleepDuration);
+		Sleep(SleepDuration);
 	}
 }
 
@@ -452,7 +336,7 @@ void PrintHighestScore()
 	ifs >> highestScore;
 	ifs.close();
 
-	ClearScreen(consoleHandle);
+	ClearScreen(ConsoleHandle);
 
 	cout << "Tetriiiis" << endl;
 	cout << "---------------------------------" << endl;
@@ -463,28 +347,30 @@ void PrintHighestScore()
 	cout << "Press any key to return to menu" << endl;
 
 	while(!kbhit()) {
-		Sleep(sleepDuration);
+		Sleep(SleepDuration);
 	}
 }
 
 int main() 
 {
-	consoleHandle = GetStdHandle( STD_OUTPUT_HANDLE );
+	ConsoleHandle = GetStdHandle( STD_OUTPUT_HANDLE );
 
 	ScreenMatrix = new char *[WindowHeight];
 	PrevScreenMatrix = new char *[WindowHeight];
+	CollisionMatrix = new bool *[WindowHeight];
 	for(int i = 0; i <WindowHeight; i++) {
 		ScreenMatrix[i] = new char[WindowWidth];
 		PrevScreenMatrix[i] = new char[WindowWidth];
+		CollisionMatrix[i] = new bool[WindowWidth];
 	}
 
-	backgroundMusic.Start();
+	BgMusic.Start();
 	int cellCount = csbi.dwSize.X *csbi.dwSize.Y;
 	DWORD count;
 	COORD homeCoords = { 0, 0 };
 
 	FillConsoleOutputCharacter(
-			consoleHandle,
+			ConsoleHandle,
 			(TCHAR) ' ',
 			cellCount,
 			homeCoords,
@@ -492,7 +378,7 @@ int main()
 
 	while(true) 
 	{
-		ClearScreen(consoleHandle);
+		ClearScreen(ConsoleHandle);
 
 		cout << "Tetriiiis" << endl;
 		cout << "---------------------------------" << endl;
@@ -527,7 +413,7 @@ int main()
 						return 0;
 				}
 			}	
-			Sleep(sleepDuration);
+			Sleep(SleepDuration);
 		}
 	}
 
