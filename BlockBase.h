@@ -168,7 +168,8 @@ public:
 
 	/*	The so-very-complicated collision detection.
 		Uses a global matrix, called CollisionMatrix, 
-		where each inactive block is outlined by ones.*/
+		where each inactive block is outlined by 1s. 
+		If active block overlaps, it is returned to its last position. */
 	bool BlockBase::CollidesEnvironment()
 	{
 		for(int i=0; i<Height; i++)
