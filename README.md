@@ -3,6 +3,8 @@ Tetris
 
 __@NikolaDimitroff: We made the project at home so almost all of the code was uploaded from a single GitHub account.__
 
+__UPDATE: Don't mind my recent commits.__
+
 Course assignment for Introduction to Programming class @ FMI, SU.
 
 General
