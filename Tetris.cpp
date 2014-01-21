@@ -20,7 +20,7 @@ using namespace std;
 HANDLE ConsoleHandle;
 
 // Window constants
-const int WindowWidth = 8;
+const int WindowWidth = 24;
 const int WindowHeight = 25;
 char **ScreenMatrix;
 bool **CollisionMatrix;
@@ -267,8 +267,6 @@ void Tetris()
 	ClearScreen(ConsoleHandle);
 	// Prepare rand
 	srand(time(NULL));
-
-	Env = new Environment(ScreenMatrix, CollisionMatrix, ConsoleHandle, WindowWidth, WindowHeight);
 		
 	for(int i=0; i<WindowHeight; i++) 
 	{
@@ -363,6 +361,8 @@ int main()
 		PrevScreenMatrix[i] = new char[WindowWidth];
 		CollisionMatrix[i] = new bool[WindowWidth];
 	}
+
+	Env = new Environment(ScreenMatrix, CollisionMatrix, ConsoleHandle, WindowWidth, WindowHeight);
 
 	BgMusic.Start();
 	int cellCount = csbi.dwSize.X *csbi.dwSize.Y;
