@@ -43,6 +43,7 @@ int Rows = 0;
 
 CONSOLE_SCREEN_BUFFER_INFO csbi;
 
+/* Calculates ghost block position. A ghost block is a block indicating where the active block will fall. */
 void RecalcGhost(BlockBase* CurrentBlock)
 {
 	GhostBlock->Coordinates.X = CurrentBlock->Coordinates.X;
@@ -60,6 +61,7 @@ void RecalcGhost(BlockBase* CurrentBlock)
 	};
 }
 
+/* Creates a new random block and its ghost block. */
 void AddBlock() {
 	int x = rand() % (WindowWidth-4);
 	int color = rand() % 7 + 9;
@@ -88,13 +90,13 @@ void AddBlock() {
 		break;
 	}
 
-	//Blocks.push_back(t);
 	CurrentBlock = t;
 	GhostBlock = new BlockBase(t);
 	GhostBlock->Ghost = true;
 	RecalcGhost(t);
 }
 
+/* Checks whether a row was formed by the blocks. Gives player 40 points if so. */
 void CheckForCombo() 
 {
 	for(int i=0; i<WindowHeight-1; i++)
@@ -123,6 +125,7 @@ void CheckForCombo()
 	}
 }
 
+/* Checks whether blocks are stacked way too high. Ends the game if so. */
 bool CheckIfFull()
 {
 	for(int i=0; i<WindowWidth; i++)
@@ -177,7 +180,8 @@ bool Update()
 			return true;
 		};
 	}	
-	
+	/*	The collision detection algorithm is suitable for only blocks moving at speed 1.
+		That's why we use a for loop, in case we want a higher speed. */
 	for(int i=0; i<ShapeSpeed; i++)
 	{
 		CurrentBlock->Coordinates.Y += 1;
@@ -232,21 +236,8 @@ bool Update()
 
 void Draw()
 {
-	//Draws only the different symbols from the current frame and the last frame to remove blinking.
-
-	for(int i=0; i<WindowHeight-1; i++) 
-	{
-		for(int j=0; j<WindowWidth; j++) 
-		{
-			PrevScreenMatrix[i][j] = ScreenMatrix[i][j];
-			ScreenMatrix[i][j] = 0;
-		}
-	}
-
-	/*for(std::vector<BlockBase*>::iterator it = Blocks.begin(); it != Blocks.end(); ++it) 
-	{
-		(*it)->Draw(ConsoleHandle, ScreenMatrix);
-	}*/
+	/*	Updates the active block, ghost block and the level and score texts. 
+		Doesn't touch anything else, to optimize buffer transactions.*/
 
 	CurrentBlock->Draw(ConsoleHandle, ScreenMatrix);
 
@@ -295,6 +286,7 @@ void Tetris()
 	// Create the first active shape
 	AddBlock();
 
+	// Initialize game loop
 	while (true)
 	{
 		if(Update())

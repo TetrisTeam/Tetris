@@ -64,6 +64,8 @@ public:
 		Ghost = false;		
 	}
 
+	/*	If block is destroyed, clear its last draw so it disappears 
+		from screen (used only by the ghost block) */
 	BlockBase::~BlockBase()
 	{
 		ClearLastDraw();
@@ -76,6 +78,7 @@ public:
 		Env = NULL;
 	}
 
+	/* Adjust initial rotation and flipping if there is one. */
 	void BlockBase::init() 
 	{
 		if(Flipped)
@@ -163,14 +166,9 @@ public:
 		this->Coordinates.Y = value.Y;
 	}
 
-	bool BlockBase::IsInside(int GlobalX, int GlobalY)
-	{
-		int LocalX = GlobalX-Coordinates.X;
-		int LocalY = GlobalY-Coordinates.Y;
-
-		return (LocalX >= 0 && LocalX < Width && LocalY >= 0 && LocalY < Height && shape[LocalY][LocalX]);
-	}
-
+	/*	The so-very-complicated collision detection.
+		Uses a global matrix, called CollisionMatrix, 
+		where each inactive block is outlined by ones.*/
 	bool BlockBase::CollidesEnvironment()
 	{
 		for(int i=0; i<Height; i++)
@@ -191,6 +189,7 @@ public:
 		return false;
 	}
 
+	/*	Removes figure from screen */
 	void BlockBase::ClearLastDraw() 
 	{
 		for(int i=0; i<Height; i++)
@@ -207,6 +206,8 @@ public:
 		}
 	}
 
+	/*	First removes figure from screen and then draws it on its new position.
+		Note that if the coordinates of the last draw are the same as now, no drawing is made.*/
 	void BlockBase::Draw(HANDLE consoleOutputHandle, char **screenMatrix)
 	{
 		if(LastDrawingX != -1)
